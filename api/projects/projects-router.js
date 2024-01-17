@@ -1,7 +1,7 @@
 // Write your "projects" router here!
 const express = require('express')
 
-const { validateProject } = require('./projects-middleware')
+const { validateProject, validateProjectChange, validateProjectId } = require('./projects-middleware')
 
 const Project = require('./projects-model')
 
@@ -32,21 +32,42 @@ router.get('/:id', async (req, res, next) =>{
       }
 });
 
-// router.post('/', validateProject, (req, res, next) =>{
+router.post('/', validateProject, (req, res, next) =>{
+    Project.insert(req.body)
+    .then(newProject => {
+      res.status(201).json(newProject)
+    })
+    .catch(next)
+  });
 
-// });
+router.put('/:id', validateProjectId, validateProjectChange, (req, res, next) =>{
+    Project.update(req.params.id,  req.body)
+    .then(() => {
+      return Project.get(req.params.id)
+    })
+    .then(project => {
+      res.json(project)
+    })
+    .catch(next)
+});
 
-// router.put('/:id', (req, res, next) =>{
+router.delete('/:id', validateProjectId, async (req, res, next) =>{
+    try {
+        await Project.remove(req.params.id)
+        res.json(req.project)
+      } catch (err) {
+        next(err)
+      }
+});
 
-// });
-
-// router.delete('/:id', async (req, res, next) =>{
-
-// });
-
-// router.get(':id/actions', (req, res, next) =>{
-
-// });
+router.get('/:id/actions', validateProjectId, (req, res, next) =>{
+    Project.getProjectActions(req.params.id)
+    .then(actions => {
+        res.json(actions)
+    })
+    .catch(next)
+    
+});
 
 router.use((err, req, res, next) => {
     res.status(err.status || 500).json({
